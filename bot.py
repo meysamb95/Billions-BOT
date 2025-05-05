@@ -8,7 +8,16 @@ from fake_useragent import FakeUserAgent
 from datetime import datetime, timezone
 from colorama import *
 import asyncio, os, pytz
+import re
 
+def parse_isoformat(date_string):
+    # جایگزینی Z با +00:00 و نرمال‌سازی کسری ثانیه
+    date_string = date_string.replace("Z", "+00:00")
+    # محدود کردن کسری ثانیه به 6 رقم
+    date_string = re.sub(r'\.\d{6,}\b', '.000000', date_string)
+    # حذف کسری ثانیه اضافی یا نادرست
+    date_string = re.sub(r'\.(\d{1,6})\d*([+-]\d{2}:\d{2})', r'.\1\2', date_string)
+    return datetime.fromisoformat(date_string)
 wib = pytz.timezone('Asia/Jakarta')
 
 class BillionsNetwork:
@@ -227,7 +236,7 @@ class BillionsNetwork:
                     )
             else:
                 utc_now = datetime.now(timezone.utc)
-                next_daily_reward_utc = datetime.fromisoformat(next_daily_reward.replace("Z", "+00:00"))
+                next_daily_reward_utc = parse_isoformat(next_daily_reward)
 
                 if utc_now >= next_daily_reward_utc:
                     claim = await self.claim_daily_reward(session_id, proxy)
